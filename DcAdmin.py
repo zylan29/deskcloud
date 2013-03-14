@@ -38,6 +38,6 @@ class DcAdmin:
 			print "Add admin user %s successed" % name
 
 if __name__ == '__main__':
-	host = '10.0.17.110'
+	host = '10.107.10.100'
 	dcadmin = DcAdmin(host)
 	dcadmin.login_admin('anzigly', '123456')
