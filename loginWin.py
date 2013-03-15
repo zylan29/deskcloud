@@ -3,7 +3,6 @@
 # loginWin.py
 import sys
 from PyQt4 import QtGui, QtCore
-import dclib, mainWin
 
 class LoginWin(QtGui.QDialog):
 	def __init__(self, parent=None):
