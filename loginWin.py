@@ -3,13 +3,15 @@
 # loginWin.py
 import sys
 from PyQt4 import QtGui, QtCore
-import dclib
+import dclib, mainWin
 
-class LoginWin(QtGui.QWidget):
+class LoginWin(QtGui.QDialog):
 	def __init__(self, parent=None):
-		QtGui.QWidget.__init__(self, parent)
-		self.windowTitle = dclib.getunicode(u'PDL虚拟桌面云系统')
-		self.setWindowTitle(self.windowTitle)
+		QtGui.QDialog.__init__(self, parent)
+
+		self.closed = 0
+
+		self.setWindowTitle(u'PDL虚拟桌面云系统')
 
 		serverLabel = QtGui.QLabel(u'服务器：')
 		self.serverEdit = QtGui.QComboBox()
@@ -43,10 +45,20 @@ class LoginWin(QtGui.QWidget):
 		grid.addWidget(loginBtn, 5, 1, 1, 4)
 
 		self.setLayout(grid)
-		self.resize(350, 300)
+		self.resize(350, 100)
+
+	def closeEvent(self, enven):
+		self.closed = 1	
+
+	def __login__(self, uri, user, passwd):
+		return True
 
 	def login(self):
-		print 'hello btn'
+		if self.__login__('10.107.10.100:8773', 'anzigly', '123456'):
+			self.accept()
+		else:
+			self.reject()
+			print "rejected"
 
 if __name__ == '__main__':
 	app = QtGui.QApplication(sys.argv)
