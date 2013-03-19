@@ -3,12 +3,19 @@
 # loginWin.py
 import sys
 from PyQt4 import QtGui, QtCore
+import xmlrpclib, rsa
 
+keybits = 512
 class LoginWin(QtGui.QDialog):
 	def __init__(self, parent=None):
 		QtGui.QDialog.__init__(self, parent)
 
 		self.closed = 0
+		self.conn = None
+		self.rpcclient = None
+		self.pubkey = None
+		self.sessionkey = None
+		self.rpcport = 8772
 
 		self.setWindowTitle(u'PDL虚拟桌面云系统')
 
@@ -28,6 +35,10 @@ class LoginWin(QtGui.QDialog):
 		self.autologin = QtGui.QCheckBox(u'自动登录')
 		self.remeberpasswd = QtGui.QCheckBox(u'记住密码')
 
+		self.serverEdit.addItem(u'10.107.10.100')
+		self.userEdit.addItem(u'admin')
+		self.passwdEdit.setText(u'admin')
+
 		loginBtn = QtGui.QPushButton(u'登陆')
 		self.connect(loginBtn, QtCore.SIGNAL('clicked()'), self.login)
 
@@ -46,18 +57,55 @@ class LoginWin(QtGui.QDialog):
 		self.setLayout(grid)
 		self.resize(350, 100)
 
+	def get_pubkey(self):
+		''''Get public key from the server'''
+		n, e = self.rpcclient.getPubkey()
+		publickey = rsa.PublicKey(int(n), int(e))
+		return publickey
+
+	def getConn(self):
+		return self.conn
+
 	def closeEvent(self, enven):
 		self.closed = 1	
 
-	def __login__(self, uri, user, passwd):
-		return True
+	def __decryptWithKey(self, crypto, prikey):
+		return rsa.decrypt(rsa.transform.int2bytes(int(crypto)), prikey)
+
+	def __decryptFromStr(self, crypto):
+		return self.__decryptWithKey(crypto, self.senssion_key)
+
+	def __encrypt2str(self, message):
+		return str(rsa.transform.bytes2int(rsa.encrypt(message, self.pubkey)))
+
+	def __login(self, username, passwd):
+		encryptName = self.__encrypt2str(username)
+		encryptPasswd = self.__encrypt2str(passwd)
+		(session_pubkey, self.senssion_key) = rsa.newkeys(keybits)
+		try:
+			access, secret, tenant_id, user_id = (self.__decryptFromStr(x) for x in self.rpcclient.loginUser(encryptName, encryptPasswd, str(session_pubkey.n), str(session_pubkey.e)))
+			return True
+		except Exception, e:
+			print e
+			return False
 
 	def login(self):
-		if self.__login__('10.107.10.100:8773', 'anzigly', '123456'):
+		server = str(self.serverEdit.currentText())
+		username = str(self.userEdit.currentText())
+		passwd = str(self.passwdEdit.text())
+		if self.rpcclient == None:
+			try:
+				self.rpcclient = xmlrpclib.ServerProxy("http://%s:%s" % (server, self.rpcport))
+				self.pubkey = self.get_pubkey()
+			except:
+				self.rpcclient = None
+				self.pubkey = None
+				self.reject()
+
+		if self.__login(username, passwd):
 			self.accept()
 		else:
 			self.reject()
-			print "rejected"
 
 if __name__ == '__main__':
 	app = QtGui.QApplication(sys.argv)
