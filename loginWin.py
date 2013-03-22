@@ -4,6 +4,8 @@
 import sys
 from PyQt4 import QtGui, QtCore
 import xmlrpclib, rsa
+import boto
+from boto.ec2.regioninfo import RegionInfo
 
 keybits = 512
 class LoginWin(QtGui.QDialog):
@@ -11,11 +13,16 @@ class LoginWin(QtGui.QDialog):
 		QtGui.QDialog.__init__(self, parent)
 
 		self.closed = 0
-		self.conn = None
 		self.rpcclient = None
 		self.pubkey = None
 		self.sessionkey = None
 		self.rpcport = 8772
+
+		self.region_name = 'pdl'
+		self.conn = None
+		self.server = None
+		self.region_port = 8773
+		self.region_path = '/services/Cloud'
 
 		self.setWindowTitle(u'PDL虚拟桌面云系统')
 
@@ -63,7 +70,7 @@ class LoginWin(QtGui.QDialog):
 		publickey = rsa.PublicKey(int(n), int(e))
 		return publickey
 
-	def getConn(self):
+	def get_conn(self):
 		return self.conn
 
 	def closeEvent(self, enven):
@@ -84,18 +91,19 @@ class LoginWin(QtGui.QDialog):
 		(session_pubkey, self.senssion_key) = rsa.newkeys(keybits)
 		try:
 			access, secret, tenant_id, user_id = (self.__decryptFromStr(x) for x in self.rpcclient.loginUser(encryptName, encryptPasswd, str(session_pubkey.n), str(session_pubkey.e)))
+			region = RegionInfo(name=self.region_name, endpoint=self.server)
+			self.conn = boto.connect_ec2(access, secret, region=region, port=self.region_port, path=self.region_path, is_secure=False)
 			return True
 		except Exception, e:
-			print e
 			return False
 
 	def login(self):
-		server = str(self.serverEdit.currentText())
+		self.server = str(self.serverEdit.currentText())
 		username = str(self.userEdit.currentText())
 		passwd = str(self.passwdEdit.text())
 		if self.rpcclient == None:
 			try:
-				self.rpcclient = xmlrpclib.ServerProxy("http://%s:%s" % (server, self.rpcport))
+				self.rpcclient = xmlrpclib.ServerProxy("http://%s:%s" % (self.server, self.rpcport))
 				self.pubkey = self.get_pubkey()
 			except:
 				self.rpcclient = None
