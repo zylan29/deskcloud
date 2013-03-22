@@ -38,6 +38,7 @@ class LoginWin(QtGui.QDialog):
 
 		passwdLabel = QtGui.QLabel(u'密  码：')
 		self.passwdEdit = QtGui.QLineEdit()
+		self.passwdEdit.setEchoMode(QtGui.QLineEdit.Password)
 
 		self.autologin = QtGui.QCheckBox(u'自动登录')
 		self.remeberpasswd = QtGui.QCheckBox(u'记住密码')
@@ -114,9 +115,3 @@ class LoginWin(QtGui.QDialog):
 			self.accept()
 		else:
 			self.reject()
-
-if __name__ == '__main__':
-	app = QtGui.QApplication(sys.argv)
-	loginwin = LoginWin()
-	loginwin.show()
-	sys.exit(app.exec_())
