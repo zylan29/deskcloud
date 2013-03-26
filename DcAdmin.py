@@ -53,7 +53,7 @@ class DcAdmin:
 			print "Add EC2 user %s successed" % name
 
 if __name__ == '__main__':
-	host = '10.107.10.100'
+	host = '10.0.17.110'
 	dcadmin = DcAdmin(host)
 	#dcadmin.login_admin('anzigly', '123456')
-	dcadmin.add_user('admin','admin','acf6ce0848d946f68a9d4c71f0d9bdc6','c64e94fe179c4346964e39217d3c1767','8e5834d7250b4897b140d4cdde3cea86','027112f0428940e9b889342f949eb30b')
+	dcadmin.add_user('ec2','ec2','e7b7ef3f94f846f29bac62a418fea2b5','c78cb573e5454f05b571f5c25469d5b5','133b5765d38345d3a4d3fd9823526fc1','1eb089552b504292962423f92bdaae47')

@@ -43,9 +43,9 @@ class LoginWin(QtGui.QDialog):
 		self.autologin = QtGui.QCheckBox(u'自动登录')
 		self.remeberpasswd = QtGui.QCheckBox(u'记住密码')
 
-		self.serverEdit.addItem(u'10.107.10.100')
-		self.userEdit.addItem(u'admin')
-		self.passwdEdit.setText(u'admin')
+		self.serverEdit.addItem(u'10.0.17.110')
+		self.userEdit.addItem(u'ec2')
+		self.passwdEdit.setText(u'ec2')
 
 		loginBtn = QtGui.QPushButton(u'登陆')
 		self.connect(loginBtn, QtCore.SIGNAL('clicked()'), self.login)

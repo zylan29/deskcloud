@@ -10,8 +10,8 @@ class DcUser:
 	def __init__(self, conn):
 		self.conn = conn
 
-	def get_all_images(self):
-		return self.conn.get_all_images()
+	#def get_all_images(self):
+	#	return self.conn.get_all_images()
 
 	def get_instance_reservations(self):
 		return self.conn.get_all_instances()
