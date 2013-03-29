@@ -8,6 +8,7 @@ import boto
 from boto.ec2.regioninfo import RegionInfo
 
 keybits = 512
+
 class LoginWin(QtGui.QDialog):
 	def __init__(self, parent=None):
 		QtGui.QDialog.__init__(self, parent)
@@ -21,10 +22,15 @@ class LoginWin(QtGui.QDialog):
 		self.region_name = 'pdl'
 		self.conn = None
 		self.server = None
-		self.region_port = 8773
+		self.region_port = '8773'
 		self.region_path = '/services/Cloud'
 
 		self.setWindowTitle(u'PDL虚拟桌面云系统')
+
+		pic = QtGui.QPixmap('zhangjiajie.jpg')
+		pic = pic.scaledToWidth(350)
+		piclabel = QtGui.QLabel()
+		piclabel.setPixmap(pic)
 
 		serverLabel = QtGui.QLabel(u'服务器：')
 		self.serverEdit = QtGui.QComboBox()
@@ -43,7 +49,7 @@ class LoginWin(QtGui.QDialog):
 		self.autologin = QtGui.QCheckBox(u'自动登录')
 		self.remeberpasswd = QtGui.QCheckBox(u'记住密码')
 
-		self.serverEdit.addItem(u'10.0.17.110')
+		self.serverEdit.addItem(u'http://10.0.17.110:8773/services/Cloud')
 		self.userEdit.addItem(u'ec2')
 		self.passwdEdit.setText(u'ec2')
 
@@ -52,15 +58,16 @@ class LoginWin(QtGui.QDialog):
 
 		grid = QtGui.QGridLayout()
 		grid.setSpacing(10)
-		grid.addWidget(serverLabel, 1, 0)
-		grid.addWidget(self.serverEdit, 1, 1, 1, 4)
-		grid.addWidget(userLabel, 2, 0)
-		grid.addWidget(self.userEdit, 2, 1, 1, 4)
-		grid.addWidget(passwdLabel, 3, 0)
-		grid.addWidget(self.passwdEdit, 3, 1, 1, 4)
-		grid.addWidget(self.autologin, 4, 1)
-		grid.addWidget(self.remeberpasswd, 4, 3)
-		grid.addWidget(loginBtn, 5, 1, 1, 4)
+		grid.addWidget(piclabel, 1, 0, 1, 5)
+		grid.addWidget(serverLabel, 2, 0)
+		grid.addWidget(self.serverEdit, 2, 1, 1, 4)
+		grid.addWidget(userLabel, 3, 0)
+		grid.addWidget(self.userEdit, 3, 1, 1, 4)
+		grid.addWidget(passwdLabel, 4, 0)
+		grid.addWidget(self.passwdEdit, 4, 1, 1, 4)
+		grid.addWidget(self.autologin, 5, 1)
+		grid.addWidget(self.remeberpasswd, 5, 3)
+		grid.addWidget(loginBtn, 6, 1, 1, 4)
 
 		self.setLayout(grid)
 		self.resize(350, 100)
@@ -93,13 +100,24 @@ class LoginWin(QtGui.QDialog):
 		try:
 			access, secret, tenant_id, user_id = (self.__decryptFromStr(x) for x in self.rpcclient.loginUser(encryptName, encryptPasswd, str(session_pubkey.n), str(session_pubkey.e)))
 			region = RegionInfo(name=self.region_name, endpoint=self.server)
-			self.conn = boto.connect_ec2(access, secret, region=region, port=self.region_port, path=self.region_path, is_secure=False)
+			self.conn = boto.connect_ec2(access, secret, region=region, port=int(self.region_port), path=self.region_path, is_secure=False)
 			return True
 		except Exception, e:
+			print e
 			return False
 
+	def parse_url(self, serverurl):
+		http_head = 'http://'
+		if serverurl.startswith(http_head):
+			serverurl = serverurl[len(http_head):]
+		ip, port = serverurl[:serverurl.find('/')].split(":")
+		path = serverurl[serverurl.find('/'):]
+		return ip, port, path
+
 	def login(self):
-		self.server = str(self.serverEdit.currentText())
+		serverurl = str(self.serverEdit.currentText())
+		self.server, self.region_port, self.region_path = self.parse_url(serverurl)
+
 		username = str(self.userEdit.currentText())
 		passwd = str(self.passwdEdit.text())
 		if self.rpcclient == None:
@@ -107,10 +125,9 @@ class LoginWin(QtGui.QDialog):
 				self.rpcclient = xmlrpclib.ServerProxy("http://%s:%s" % (self.server, self.rpcport))
 				self.pubkey = self.get_pubkey()
 			except:
-				self.rpcclient = None
-				self.pubkey = None
+				QtGui.QMessageBox.question(self, u'提示', u'连接服务器发生错误！', QtGui.QMessageBox.Yes)
 				self.reject()
-
+				return
 		if self.__login(username, passwd):
 			self.accept()
 		else:

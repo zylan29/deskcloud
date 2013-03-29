@@ -56,4 +56,4 @@ if __name__ == '__main__':
 	host = '10.0.17.110'
 	dcadmin = DcAdmin(host)
 	#dcadmin.login_admin('anzigly', '123456')
-	dcadmin.add_user('ec2','ec2','e7b7ef3f94f846f29bac62a418fea2b5','c78cb573e5454f05b571f5c25469d5b5','133b5765d38345d3a4d3fd9823526fc1','1eb089552b504292962423f92bdaae47')
+	dcadmin.add_user('admin','admin','27514ffe8d3e439a9738b99339510a80','ded5119fdc1d42aeaf0d2c3ff23cc27f','133b5765d38345d3a4d3fd9823526fc1','027112f0428940e9b889342f949eb30b')
