@@ -31,6 +31,4 @@ class DcUser:
 		self.conn.start_instances(ins_id_list)
 
 	def stop_instances(self, ins_id_list):
-		print 'asdf'
 		ret=self.conn.stop_instances(ins_id_list)
-		print ret

@@ -104,7 +104,8 @@ class MainWin(QtGui.QMainWindow):
 			self.instancelist.clear()
 			self.instancelist.addItems(self.__objlist2strlist(self.instances))
 		if current_row != -1:
-			self.instancelist.setCurrentRow(current_row)
+			current_item = self.instancelist.item(current_row)
+			self.select_changed_instancelist(current_item, current_item)
 
 	def start_ins(self):
 		self.user.reboot_instances([self.selected_ins.id])
@@ -118,7 +119,6 @@ class MainWin(QtGui.QMainWindow):
 
 	def select_changed_instancelist(self, current, previous):
 		if current == None:
-			print '111111'
 			return
 		instance_info = []
 		instance_name = current.text()
@@ -131,7 +131,7 @@ class MainWin(QtGui.QMainWindow):
 					self.startbtn.setDisabled(False)
 					self.shutbtn.setText(u'关机')
 					self.shutbtn.setHidden(False)
-					self.startbtn.setDisabled(False)
+					self.shutbtn.setDisabled(False)
 				elif ins.state == 'stopped':
 					self.startbtn.setText(u'开机')
 					self.startbtn.setHidden(False)
