@@ -72,6 +72,9 @@ class LoginWin(QtGui.QDialog):
 		self.setLayout(grid)
 		self.resize(350, 100)
 
+	def timeout(self):
+		QtGui.QMessageBox.warning(self, u'提示', u'连接服务器超时！', QtGui.QMessageBox.Yes)
+
 	def get_pubkey(self):
 		''''Get public key from the server'''
 		n, e = self.rpcclient.getPubkey()
@@ -101,9 +104,13 @@ class LoginWin(QtGui.QDialog):
 			access, secret, tenant_id, user_id = (self.__decryptFromStr(x) for x in self.rpcclient.loginUser(encryptName, encryptPasswd, str(session_pubkey.n), str(session_pubkey.e)))
 			region = RegionInfo(name=self.region_name, endpoint=self.server)
 			self.conn = boto.connect_ec2(access, secret, region=region, port=int(self.region_port), path=self.region_path, is_secure=False)
+			print 'a'
+			self.conn.get_all_instances()
+			print 'b'
 			return True
 		except Exception, e:
-			print e
+			print 'c'
+			QtGui.QMessageBox.warning(self, u'提示', u'连接服务器发生错误！', QtGui.QMessageBox.Yes)
 			return False
 
 	def parse_url(self, serverurl):
@@ -117,15 +124,15 @@ class LoginWin(QtGui.QDialog):
 	def login(self):
 		serverurl = str(self.serverEdit.currentText())
 		self.server, self.region_port, self.region_path = self.parse_url(serverurl)
-
 		username = str(self.userEdit.currentText())
 		passwd = str(self.passwdEdit.text())
+
 		if self.rpcclient == None:
 			try:
 				self.rpcclient = xmlrpclib.ServerProxy("http://%s:%s" % (self.server, self.rpcport))
 				self.pubkey = self.get_pubkey()
 			except:
-				QtGui.QMessageBox.question(self, u'提示', u'连接服务器发生错误！', QtGui.QMessageBox.Yes)
+				QtGui.QMessageBox.warning(self, u'提示', u'连接服务器发生错误！', QtGui.QMessageBox.Yes)
 				self.reject()
 				return
 		if self.__login(username, passwd):

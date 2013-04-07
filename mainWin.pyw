@@ -24,9 +24,14 @@ class MainWin(QtGui.QMainWindow):
 		exit.setStatusTip('Exitapplication')
 		exit.connect(exit,QtCore.SIGNAL('triggered()'), QtGui.qApp, QtCore.SLOT('quit()'))
 
+		about = QtGui.QAction(u'关于', self)
+		self.connect(about,QtCore.SIGNAL('triggered()'), self.about)
+
 		menu = self.menuBar()
 		filemenu = menu.addMenu(u'文件')
 		filemenu.addAction(exit)
+		filemenu.addAction(about)
+		
 		self.statusBar()
 		
 		tabwidget = QtGui.QTabWidget()
@@ -72,6 +77,9 @@ class MainWin(QtGui.QMainWindow):
 		self.connect(self.update_timer, QtCore.SIGNAL('timeout()'), self.update)
 		self.update_timer.start(1*1000)
 
+	def about(self):
+		about_str = u'作者：李紫阳'
+		QtGui.QMessageBox.information(self, u'关于', about_str, QtGui.QMessageBox.Yes)
 
 	def update(self):
 		self.update_ui()
@@ -143,7 +151,7 @@ class MainWin(QtGui.QMainWindow):
 					self.shutbtn.setDisabled(True)
 					self.shutbtn.setHidden(False)
 
-				instance_info = [u'虚拟机：\t%s'%ins.id, u'状态：\t%s'%ins.state, u'IP地址：\t%s'%ins.ip_address, u'Launch Time：\t%s'%ins.launch_time]
+				instance_info = [u'虚拟机ID：\t%s'%ins.id, u'状态：\t%s'%ins.state, u'IP地址：\t%s'%ins.ip_address, u'启动时间：\t%s'%ins.launch_time]
 				break
 		self.detaillist.clear()
 		self.detaillist.addItems(instance_info)
