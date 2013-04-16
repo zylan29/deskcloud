@@ -6,7 +6,7 @@ import sys
 from PyQt4 import QtGui, QtCore
 import boto
 from boto.ec2.regioninfo import RegionInfo
-import loginWin, dcUser
+import loginWin, dcUser, dcIcos
 
 
 class MainWin(QtGui.QMainWindow):
@@ -19,18 +19,34 @@ class MainWin(QtGui.QMainWindow):
 
 		self.setWindowTitle(u'PDL虚拟桌面云系统')
 
-		exit = QtGui.QAction(u'退出', self)
-		exit.setShortcut('Ctrl+Q')
-		exit.setStatusTip('Exitapplication')
-		exit.connect(exit,QtCore.SIGNAL('triggered()'), QtGui.qApp, QtCore.SLOT('quit()'))
+		exitact = QtGui.QAction(u'退出', self)
+		exitact.setShortcut('Ctrl+Q')
+		exitact.setStatusTip('Exit Application')
+		exitact.connect(exitact, QtCore.SIGNAL('triggered()'), QtGui.qApp, QtCore.SLOT('quit()'))
 
-		about = QtGui.QAction(u'关于', self)
-		self.connect(about,QtCore.SIGNAL('triggered()'), self.about)
+		aboutact = QtGui.QAction(u'关于', self)
+		self.connect(aboutact, QtCore.SIGNAL('triggered()'), self.about)
+
+		self.startact = QtGui.QAction(QtGui.QIcon('icos/start.ico'), u'启动', self)
+		self.connect(self.startact, QtCore.SIGNAL('triggered()'), self.start_ins)
+		self.stopact = QtGui.QAction(QtGui.QIcon('icos/stop.ico'), u'关机', self)
+		self.connect(self.stopact, QtCore.SIGNAL('triggered()'), self.shut_ins)
+		self.startact.setDisabled(True)
+		self.stopact.setDisabled(True)
+
 
 		menu = self.menuBar()
 		filemenu = menu.addMenu(u'文件')
-		filemenu.addAction(exit)
-		filemenu.addAction(about)
+		filemenu.addAction(exitact)
+		filemenu.addAction(aboutact)
+
+
+
+		toolbar = QtGui.QToolBar()
+		toolbar.addAction(self.startact)
+		toolbar.addAction(self.stopact)
+
+		self.addToolBar(toolbar)
 		
 		self.statusBar()
 		
@@ -42,24 +58,10 @@ class MainWin(QtGui.QMainWindow):
 
 		tabwidget.setMovable(True)
 
-		welcomelab = QtGui.QLabel(u"<font color=blue size=4><b>欢迎来到PDL虚拟桌面云系统</b></font>")
-		welcomelab.setAlignment(QtCore.Qt.AlignCenter)
-		self.startbtn = QtGui.QPushButton(u'启动')
-		self.startbtn.setHidden(True)
-		self.connect(self.startbtn, QtCore.SIGNAL('clicked()'), self.start_ins)
-
-		self.shutbtn = QtGui.QPushButton(u'关机')
-		self.shutbtn.setHidden(True)
-		self.connect(self.shutbtn, QtCore.SIGNAL('clicked()'), self.shut_ins)
-
-		hbox = QtGui.QHBoxLayout()
-
-		hbox.addWidget(self.startbtn)
-		hbox.addWidget(self.shutbtn)
+	
 		self.detaillist = QtGui.QListWidget()
 		vbox = QtGui.QVBoxLayout()
-		vbox.addWidget(welcomelab)
-		vbox.addLayout(hbox)
+		
 		vbox.addWidget(self.detaillist)
 
 		box = QtGui.QHBoxLayout()
@@ -78,7 +80,7 @@ class MainWin(QtGui.QMainWindow):
 		self.update_timer.start(1*1000)
 
 	def about(self):
-		about_str = u'作者：李紫阳'
+		about_str = u'PDL虚拟桌面云系统\n版本： 0.1alpha\n作者：李紫阳'
 		QtGui.QMessageBox.information(self, u'关于', about_str, QtGui.QMessageBox.Yes)
 
 	def update(self):
@@ -134,22 +136,18 @@ class MainWin(QtGui.QMainWindow):
 			if instance_name == ins.id:
 				self.selected_ins = ins
 				if ins.state == 'running':
-					self.startbtn.setText(u'重启')
-					self.startbtn.setHidden(False)
-					self.startbtn.setDisabled(False)
-					self.shutbtn.setText(u'关机')
-					self.shutbtn.setHidden(False)
-					self.shutbtn.setDisabled(False)
+					self.startact.setIcon(QtGui.QIcon('icos/reboot.ico'))
+					self.startact.setText(u'重启')
+					self.startact.setDisabled(False)
+					self.stopact.setIconText(u'关机')
+					self.stopact.setDisabled(False)
 				elif ins.state == 'stopped':
-					self.startbtn.setText(u'开机')
-					self.startbtn.setHidden(False)
-					self.shutbtn.setDisabled(True)
-					self.shutbtn.setHidden(True)
+					self.startact.setIcon(QtGui.QIcon('icos/start.ico'))
+					self.startact.setText(u'开机')
+					self.stopact.setDisabled(True)
 				else:
-					self.startbtn.setDisabled(True)
-					self.startbtn.setHidden(False)
-					self.shutbtn.setDisabled(True)
-					self.shutbtn.setHidden(False)
+					self.startact.setDisabled(True)
+					self.stopact.setDisabled(True)
 
 				instance_info = [u'虚拟机ID：\t%s'%ins.id, u'状态：\t%s'%ins.state, u'IP地址：\t%s'%ins.ip_address, u'启动时间：\t%s'%ins.launch_time]
 				break

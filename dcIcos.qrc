@@ -1,0 +1,7 @@
+<RCC>
+  <qresource prefix="deskcloud">
+    <file>icos/reboot.ico</file>
+    <file>icos/start.ico</file>
+    <file>icos/stop.ico</file>
+  </qresource>
+</RCC>

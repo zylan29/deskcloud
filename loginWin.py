@@ -27,7 +27,7 @@ class LoginWin(QtGui.QDialog):
 
 		self.setWindowTitle(u'PDL虚拟桌面云系统')
 
-		pic = QtGui.QPixmap('zhangjiajie.jpg')
+		pic = QtGui.QPixmap('resources/zhangjiajie.jpg')
 		pic = pic.scaledToWidth(350)
 		piclabel = QtGui.QLabel()
 		piclabel.setPixmap(pic)
@@ -72,9 +72,6 @@ class LoginWin(QtGui.QDialog):
 		self.setLayout(grid)
 		self.resize(350, 100)
 
-	def timeout(self):
-		QtGui.QMessageBox.warning(self, u'提示', u'连接服务器超时！', QtGui.QMessageBox.Yes)
-
 	def get_pubkey(self):
 		''''Get public key from the server'''
 		n, e = self.rpcclient.getPubkey()
@@ -104,9 +101,8 @@ class LoginWin(QtGui.QDialog):
 			access, secret, tenant_id, user_id = (self.__decryptFromStr(x) for x in self.rpcclient.loginUser(encryptName, encryptPasswd, str(session_pubkey.n), str(session_pubkey.e)))
 			region = RegionInfo(name=self.region_name, endpoint=self.server)
 			self.conn = boto.connect_ec2(access, secret, region=region, port=int(self.region_port), path=self.region_path, is_secure=False)
-			print 'a'
+			#TODO: Need to fix! when the connection is not correct, we need a timeout alert!
 			self.conn.get_all_instances()
-			print 'b'
 			return True
 		except Exception, e:
 			print 'c'
