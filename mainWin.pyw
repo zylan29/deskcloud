@@ -40,8 +40,6 @@ class MainWin(QtGui.QMainWindow):
 		filemenu.addAction(exitact)
 		filemenu.addAction(aboutact)
 
-
-
 		toolbar = QtGui.QToolBar()
 		toolbar.addAction(self.startact)
 		toolbar.addAction(self.stopact)
@@ -55,6 +53,14 @@ class MainWin(QtGui.QMainWindow):
 		self.instancelist.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
 		self.connect(self.instancelist, QtCore.SIGNAL('currentItemChanged(QListWidgetItem *,QListWidgetItem *)'), self.select_changed_instancelist)
 		tabwidget.addTab(self.instancelist, u'虚拟机实例')
+
+		#Add Right click context menu on instancelist
+		self.instancelist.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+		self.instancelist.customContextMenuRequested.connect(self.showInstanceContextMenu)
+		self.instanceContextMenu = QtGui.QMenu(self)
+		self.instanceContextMenu.addAction(self.startact)
+		self.instanceContextMenu.addAction(self.stopact)
+
 
 		tabwidget.setMovable(True)
 
@@ -82,6 +88,14 @@ class MainWin(QtGui.QMainWindow):
 	def about(self):
 		about_str = u'PDL虚拟桌面云系统\n版本： 0.1alpha\n作者：李紫阳'
 		QtGui.QMessageBox.information(self, u'关于', about_str, QtGui.QMessageBox.Yes)
+
+	def createPopupMenu(self):
+		pass
+
+	def showInstanceContextMenu(self, pos):
+		if self.instancelist.itemAt(pos):
+			self.instanceContextMenu.move(QtGui.QCursor.pos())
+			self.instanceContextMenu.show()
 
 	def update(self):
 		self.update_ui()
