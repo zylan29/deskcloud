@@ -79,11 +79,12 @@ class MainWin(QtGui.QMainWindow):
 		self.setCentralWidget(centralwidget)
 		self.resize(550, 500)
 
-		self.update()
+		self.update_ui()
 
-		self.update_timer = QtCore.QTimer(self)
-		self.connect(self.update_timer, QtCore.SIGNAL('timeout()'), self.update)
-		self.update_timer.start(1*1000)
+		
+		update_thread = QtCore.QThread(self)
+		update_thread.connect(update_thread, QtCore.SIGNAL('started()'), self.update)
+		update_thread.start()		
 
 	def about(self):
 		about_str = u'PDL虚拟桌面云系统\n版本： 0.1alpha\n作者：李紫阳'
@@ -98,7 +99,9 @@ class MainWin(QtGui.QMainWindow):
 			self.instanceContextMenu.show()
 
 	def update(self):
-		self.update_ui()
+		update_timer = QtCore.QTimer(self)
+		update_timer.connect(update_timer, QtCore.SIGNAL('timeout()'), self.update_ui)
+		update_timer.start(1*1000)
 
 	def update_instance_data(self):
 		self.instances = self.user.get_all_instances()
