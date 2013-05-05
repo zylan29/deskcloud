@@ -49,9 +49,9 @@ class LoginWin(QtGui.QDialog):
 		self.autologin = QtGui.QCheckBox(u'自动登录')
 		self.remeberpasswd = QtGui.QCheckBox(u'记住密码')
 
-		self.serverEdit.addItem(u'http://10.0.17.110:8773/services/Cloud')
-		self.userEdit.addItem(u'ec2')
-		self.passwdEdit.setText(u'ec2')
+		self.serverEdit.addItem(u'http://192.168.0.135:8773/services/Cloud')
+		self.userEdit.addItem(u'admin')
+		self.passwdEdit.setText(u'admin')
 
 		loginBtn = QtGui.QPushButton(u'登陆')
 		self.connect(loginBtn, QtCore.SIGNAL('clicked()'), self.login)
@@ -78,8 +78,11 @@ class LoginWin(QtGui.QDialog):
 		publickey = rsa.PublicKey(int(n), int(e))
 		return publickey
 
-	def get_conn(self):
+	def get_ec2conn(self):
 		return self.conn
+
+	def get_rpcconn(self):
+		return self.rpcclient
 
 	def closeEvent(self, enven):
 		self.closed = 1	

@@ -7,14 +7,12 @@ __author__ = 'liziyang'
 __version__ = '0.1'
 
 class DcUser:
-	def __init__(self, conn):
-		self.conn = conn
-
-	#def get_all_images(self):
-	#	return self.conn.get_all_images()
+	def __init__(self, ec2conn, rpcconn):
+		self.ec2conn = ec2conn
+		self.rpcconn = rpcconn
 
 	def get_instance_reservations(self):
-		return self.conn.get_all_instances()
+		return self.ec2conn.get_all_instances()
 		
 	def get_all_instances(self):
 		instances = []
@@ -25,10 +23,15 @@ class DcUser:
 		return instances
 
 	def reboot_instances(self, ins_id_list):
-		self.conn.reboot_instances(ins_id_list)
+		self.ec2conn.reboot_instances(ins_id_list)
 
 	def start_instances(self, ins_id_list):
-		self.conn.start_instances(ins_id_list)
+		self.ec2conn.start_instances(ins_id_list)
 
 	def stop_instances(self, ins_id_list):
-		ret=self.conn.stop_instances(ins_id_list)
+		ret=self.ec2conn.stop_instances(ins_id_list)
+
+	def get_vnc_display(self, ins_id):
+		result = self.rpcconn.getVncDisplsy(ins_id)[1]
+		#result = result[1:len(result)-1]
+		return result

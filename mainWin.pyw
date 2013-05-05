@@ -2,18 +2,26 @@
 #-*- coding:utf-8 -*-
 # mainWin.py
 
-import sys
+import os, sys, subprocess
 from PyQt4 import QtGui, QtCore
 import boto
 from boto.ec2.regioninfo import RegionInfo
 import loginWin, dcUser, dcIcos
 
+VNCBIN = '"C:\Program Files (x86)\RealVNC\VNC4\\vncviewer.exe"'
+
+class SystemThread(QtCore.QThread):
+	def __init__(self, cmd, parent = None):
+		QtCore.QThread.__init__ (self, parent = None)
+		self.cmd = cmd
+	def run(self):
+		subprocess.call(self.cmd)
 
 class MainWin(QtGui.QMainWindow):
-	def __init__(self, conn, parent=None):
+	def __init__(self, conn, rpcconn, parent=None):
 		QtGui.QMainWindow.__init__(self, parent)
 
-		self.user = dcUser.DcUser(conn)
+		self.user = dcUser.DcUser(conn, rpcconn)
 		self.instances = []
 		self.selected_ins = None
 
@@ -29,21 +37,30 @@ class MainWin(QtGui.QMainWindow):
 
 		self.startact = QtGui.QAction(QtGui.QIcon('icos/start.ico'), u'启动', self)
 		self.connect(self.startact, QtCore.SIGNAL('triggered()'), self.start_ins)
+
 		self.stopact = QtGui.QAction(QtGui.QIcon('icos/stop.ico'), u'关机', self)
 		self.connect(self.stopact, QtCore.SIGNAL('triggered()'), self.shut_ins)
+
+		self.viewact = QtGui.QAction(QtGui.QIcon('icos/show.ico'), u'显示', self)
+		self.connect(self.viewact, QtCore.SIGNAL('triggered()'), self.view_ins)
+
 		self.startact.setDisabled(True)
 		self.stopact.setDisabled(True)
+		self.viewact.setDisabled(True)
 
 
 		menu = self.menuBar()
 		filemenu = menu.addMenu(u'文件')
 		filemenu.addAction(exitact)
 		filemenu.addAction(aboutact)
+		menu.addAction(self.startact)
+		menu.addAction(self.stopact)
+		menu.addAction(self.viewact)
 
 		toolbar = QtGui.QToolBar()
 		toolbar.addAction(self.startact)
 		toolbar.addAction(self.stopact)
-
+		toolbar.addAction(self.viewact)
 		self.addToolBar(toolbar)
 		
 		self.statusBar()
@@ -60,6 +77,7 @@ class MainWin(QtGui.QMainWindow):
 		self.instanceContextMenu = QtGui.QMenu(self)
 		self.instanceContextMenu.addAction(self.startact)
 		self.instanceContextMenu.addAction(self.stopact)
+		self.instanceContextMenu.addAction(self.viewact)
 
 
 		tabwidget.setMovable(True)
@@ -81,7 +99,6 @@ class MainWin(QtGui.QMainWindow):
 
 		self.update_ui()
 
-		
 		update_thread = QtCore.QThread(self)
 		update_thread.connect(update_thread, QtCore.SIGNAL('started()'), self.update)
 		update_thread.start()		
@@ -134,6 +151,12 @@ class MainWin(QtGui.QMainWindow):
 			current_item = self.instancelist.item(current_row)
 			self.select_changed_instancelist(current_item, current_item)
 
+	def view_ins(self):
+		vncport = self.user.get_vnc_display(self.selected_ins.id).rstrip()
+		cmd='{0} {1}'.format(VNCBIN, vncport)
+		self.vnc_thread = SystemThread(cmd)
+		self.vnc_thread.start()
+
 	def start_ins(self):
 		self.user.reboot_instances([self.selected_ins.id])
 		self.update_instance_data()
@@ -158,13 +181,17 @@ class MainWin(QtGui.QMainWindow):
 					self.startact.setDisabled(False)
 					self.stopact.setIconText(u'关机')
 					self.stopact.setDisabled(False)
+					self.viewact.setDisabled(False)
 				elif ins.state == 'stopped':
 					self.startact.setIcon(QtGui.QIcon('icos/start.ico'))
 					self.startact.setText(u'开机')
+					self.startact.setDisabled(False)
 					self.stopact.setDisabled(True)
+					self.viewact.setDisabled(True)
 				else:
-					self.startact.setDisabled(True)
+					self.startact.setDisabled(False)
 					self.stopact.setDisabled(True)
+					self.viewact.setDisabled(True)
 
 				instance_info = [u'虚拟机ID：\t%s'%ins.id, u'状态：\t%s'%ins.state, u'IP地址：\t%s'%ins.ip_address, u'启动时间：\t%s'%ins.launch_time]
 				break
@@ -186,7 +213,7 @@ if __name__ == '__main__':
 		loginwindow = None
 		loginwindow = loginWin.LoginWin()
 		loginwindow.show()
-	mainwindow = MainWin(loginwindow.get_conn())
+	mainwindow = MainWin(loginwindow.get_ec2conn(), loginwindow.get_rpcconn())
 	mainwindow.show()
 
 	sys.exit(app.exec_())
