@@ -31,7 +31,6 @@ class DcUser:
 	def stop_instances(self, ins_id_list):
 		ret=self.ec2conn.stop_instances(ins_id_list)
 
-	def get_vnc_display(self, ins_id):
-		result = self.rpcconn.getVncDisplsy(ins_id)[1]
-		#result = result[1:len(result)-1]
-		return result
+	def get_display(self, ins_id):
+		display = eval(self.rpcconn.getDisplay(ins_id))
+		return display

@@ -2,13 +2,16 @@
 #-*- coding:utf-8 -*-
 # mainWin.py
 
-import os, sys, subprocess
+import os, sys, subprocess, urllib
 from PyQt4 import QtGui, QtCore
 import boto
 from boto.ec2.regioninfo import RegionInfo
 import loginWin, dcUser, dcIcos
 
+SCREEN_PORT = '8000'
+SCREEN_PATH = 'screens/'
 VNCBIN = '"C:\Program Files (x86)\RealVNC\VNC4\\vncviewer.exe"'
+SPICEBIN = '"C:\Program Files (x86)\spicec\spicec.exe"'
 
 class SystemThread(QtCore.QThread):
 	def __init__(self, cmd, parent = None):
@@ -32,7 +35,7 @@ class MainWin(QtGui.QMainWindow):
 		exitact.setStatusTip('Exit Application')
 		exitact.connect(exitact, QtCore.SIGNAL('triggered()'), QtGui.qApp, QtCore.SLOT('quit()'))
 
-		aboutact = QtGui.QAction(u'关于', self)
+		aboutact = QtGui.QAction(QtGui.QIcon('icos/info.ico'), u'帮助', self)
 		self.connect(aboutact, QtCore.SIGNAL('triggered()'), self.about)
 
 		self.startact = QtGui.QAction(QtGui.QIcon('icos/start.ico'), u'启动', self)
@@ -61,6 +64,7 @@ class MainWin(QtGui.QMainWindow):
 		toolbar.addAction(self.startact)
 		toolbar.addAction(self.stopact)
 		toolbar.addAction(self.viewact)
+		toolbar.addAction(aboutact)
 		self.addToolBar(toolbar)
 		
 		self.statusBar()
@@ -84,9 +88,14 @@ class MainWin(QtGui.QMainWindow):
 
 	
 		self.detaillist = QtGui.QListWidget()
+		screen = QtGui.QPixmap('screens/default.ppm')
+		screen = screen.scaledToWidth(600)
+		self.screen_label = QtGui.QLabel()
+		self.screen_label.setPixmap(screen)
+
 		vbox = QtGui.QVBoxLayout()
-		
 		vbox.addWidget(self.detaillist)
+		vbox.addWidget(self.screen_label)
 
 		box = QtGui.QHBoxLayout()
 		box.addWidget(tabwidget, 1)
@@ -95,13 +104,29 @@ class MainWin(QtGui.QMainWindow):
 		centralwidget = QtGui.QWidget()
 		centralwidget.setLayout(box)
 		self.setCentralWidget(centralwidget)
-		self.resize(550, 500)
+		self.resize(550, 600)
 
 		self.update_ui()
 
 		update_thread = QtCore.QThread(self)
 		update_thread.connect(update_thread, QtCore.SIGNAL('started()'), self.update)
-		update_thread.start()		
+		update_thread.start()
+
+	def update_screen(self):
+		display = None
+		try:
+			display = self.user.get_display(self.selected_ins.id)
+		except:
+			print "Could NOT get display for SELECTED instance"
+		if display['type'] == 'spice':
+			urllib.urlretrieve('http://%s:%s/screens/%s.png'%(display['host'], SCREEN_PORT, self.selected_ins.id), '%s%s.png'%(SCREEN_PATH, self.selected_ins.id))
+			screen_pixmap = QtGui.QPixmap('%s%s.png'%(SCREEN_PATH, self.selected_ins.id), 'png')
+			screen_pixmap = screen_pixmap.scaledToWidth(600)
+			self.screen_label.setPixmap(screen_pixmap)
+		else:
+			screen = QtGui.QPixmap('screens/default.ppm')
+			screen = screen.scaledToWidth(600)
+			self.screen_label.setPixmap(screen)
 
 	def about(self):
 		about_str = u'PDL虚拟桌面云系统\n版本： 0.1alpha\n作者：李紫阳'
@@ -118,7 +143,7 @@ class MainWin(QtGui.QMainWindow):
 	def update(self):
 		update_timer = QtCore.QTimer(self)
 		update_timer.connect(update_timer, QtCore.SIGNAL('timeout()'), self.update_ui)
-		update_timer.start(1*1000)
+		update_timer.start(10*1000)
 
 	def update_instance_data(self):
 		self.instances = self.user.get_all_instances()
@@ -149,13 +174,20 @@ class MainWin(QtGui.QMainWindow):
 			self.instancelist.addItems(self.__objlist2strlist(self.instances))
 		if current_row != -1:
 			current_item = self.instancelist.item(current_row)
-			self.select_changed_instancelist(current_item, current_item)
+			ins_obj = self.get_selected_instance(current_item.text())
+			self.update_instance_status(ins_obj)
+
 
 	def view_ins(self):
-		vncport = self.user.get_vnc_display(self.selected_ins.id).rstrip()
-		cmd='{0} {1}'.format(VNCBIN, vncport)
-		self.vnc_thread = SystemThread(cmd)
-		self.vnc_thread.start()
+		display = self.user.get_display(self.selected_ins.id)
+		cmd = ''
+		if display['type'] == 'spice':
+			cmd = '{0} -h {1} -p {2}'.format(SPICEBIN, display['host'], display['port'])
+		elif display['type'] == 'vnc':
+			cmd='{0} {1}:{2}'.format(VNCBIN, display['host'], display['port'])
+		print cmd
+		self.view_thread = SystemThread(cmd)
+		self.view_thread.start()
 
 	def start_ins(self):
 		self.user.reboot_instances([self.selected_ins.id])
@@ -167,36 +199,42 @@ class MainWin(QtGui.QMainWindow):
 		self.update_instance_data()
 		self.update_ui()
 
+	def get_selected_instance(self, instance_name):
+		for ins in self.instances:
+			if instance_name == ins.id:
+				self.selected_ins = ins
+				return ins
+
+	def update_instance_status(self, instance_obj):
+		if instance_obj.state == 'running':
+			self.startact.setIcon(QtGui.QIcon('icos/reboot.ico'))
+			self.startact.setText(u'重启')
+			self.startact.setDisabled(False)
+			self.stopact.setIconText(u'关机')
+			self.stopact.setDisabled(False)
+			self.viewact.setDisabled(False)
+		elif instance_obj.state == 'stopped':
+			self.startact.setIcon(QtGui.QIcon('icos/start.ico'))
+			self.startact.setText(u'开机')
+			self.startact.setDisabled(False)
+			self.stopact.setDisabled(True)
+			self.viewact.setDisabled(True)
+		else:
+			self.startact.setDisabled(False)
+			self.stopact.setDisabled(True)
+			self.viewact.setDisabled(True)
+		instance_info = [u'虚拟机ID：\t%s'%instance_obj.id, u'状态：\t%s'%instance_obj.state, u'IP地址：\t%s'%instance_obj.ip_address, u'启动时间：\t%s'%instance_obj.launch_time]
+		self.detaillist.clear()
+		self.detaillist.addItems(instance_info)
+
 	def select_changed_instancelist(self, current, previous):
 		if current == None:
 			return
 		instance_info = []
 		instance_name = current.text()
-		for ins in self.instances:
-			if instance_name == ins.id:
-				self.selected_ins = ins
-				if ins.state == 'running':
-					self.startact.setIcon(QtGui.QIcon('icos/reboot.ico'))
-					self.startact.setText(u'重启')
-					self.startact.setDisabled(False)
-					self.stopact.setIconText(u'关机')
-					self.stopact.setDisabled(False)
-					self.viewact.setDisabled(False)
-				elif ins.state == 'stopped':
-					self.startact.setIcon(QtGui.QIcon('icos/start.ico'))
-					self.startact.setText(u'开机')
-					self.startact.setDisabled(False)
-					self.stopact.setDisabled(True)
-					self.viewact.setDisabled(True)
-				else:
-					self.startact.setDisabled(False)
-					self.stopact.setDisabled(True)
-					self.viewact.setDisabled(True)
-
-				instance_info = [u'虚拟机ID：\t%s'%ins.id, u'状态：\t%s'%ins.state, u'IP地址：\t%s'%ins.ip_address, u'启动时间：\t%s'%ins.launch_time]
-				break
-		self.detaillist.clear()
-		self.detaillist.addItems(instance_info)
+		ins_obj = self.get_selected_instance(instance_name)
+		self.update_instance_status(ins_obj)
+		self.update_screen()
 
 	def __objlist2dict(self, objlist):
 		self.__objlist2strlist()
