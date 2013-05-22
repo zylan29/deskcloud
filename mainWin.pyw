@@ -129,7 +129,7 @@ class MainWin(QtGui.QMainWindow):
 			self.screen_label.setPixmap(screen)
 
 	def about(self):
-		about_str = u'PDL虚拟桌面云系统\n版本： 0.1alpha\n作者：李紫阳'
+		about_str = u'PDL虚拟桌面云系统\n版本： 0.1beta\n作者：李紫阳'
 		QtGui.QMessageBox.information(self, u'关于', about_str, QtGui.QMessageBox.Yes)
 
 	def createPopupMenu(self):
